@@ -5,15 +5,13 @@ from typing import Tuple
 
 import pandas as pd
 
-from jobspy.bayt import BaytScraper
-from jobspy.bdjobs import BDJobs
 from jobspy.builtin import BuiltIn
 from jobspy.glassdoor import Glassdoor
-from jobspy.google import Google
+from jobspy.greenhouse import Greenhouse
 from jobspy.indeed import Indeed
 from jobspy.linkedin import LinkedIn
-from jobspy.naukri import Naukri
 from jobspy.remoteok import RemoteOK
+from jobspy.ziprecruiter import ZipRecruiter
 from jobspy.model import JobType, Location, JobResponse, Country
 from jobspy.model import SalarySource, ScraperInput, Site
 from jobspy.util import (
@@ -25,7 +23,6 @@ from jobspy.util import (
     convert_to_annual,
     desired_order,
 )
-from jobspy.ziprecruiter import ZipRecruiter
 
 
 # Update the SCRAPER_MAPPING dictionary in the scrape_jobs function
@@ -62,10 +59,7 @@ def scrape_jobs(
         Site.INDEED: Indeed,
         Site.ZIP_RECRUITER: ZipRecruiter,
         Site.GLASSDOOR: Glassdoor,
-        Site.GOOGLE: Google,
-        Site.BAYT: BaytScraper,
-        Site.NAUKRI: Naukri,
-        Site.BDJOBS: BDJobs,  # Add BDJobs to the scraper mapping
+        Site.GREENHOUSE: Greenhouse,
         Site.BUILTIN: BuiltIn,
         Site.REMOTEOK: RemoteOK,
     }
@@ -225,7 +219,8 @@ def scrape_jobs(
         return pd.DataFrame()
 
 
-# Add BDJobs to __all__
 __all__ = [
-    "BDJobs",
+    "BuiltIn",
+    "Greenhouse",
+    "RemoteOK",
 ]

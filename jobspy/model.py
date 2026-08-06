@@ -289,10 +289,7 @@ class Site(Enum):
     INDEED = "indeed"
     ZIP_RECRUITER = "zip_recruiter"
     GLASSDOOR = "glassdoor"
-    GOOGLE = "google"
-    BAYT = "bayt"
-    NAUKRI = "naukri"
-    BDJOBS = "bdjobs"  # Add this line
+    GREENHOUSE = "greenhouse"
     BUILTIN = "builtin"
     REMOTEOK = "remoteok"
 
