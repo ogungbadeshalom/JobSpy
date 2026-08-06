@@ -153,13 +153,28 @@ class Glassdoor(Scraper):
         """
         Fetches csrf token needed for API by visiting a generic page
         """
-        res = self.session.get(f"{self.base_url}/Job/computer-science-jobs.htm")
-        pattern = r'"token":\s*"([^"]+)"'
-        matches = re.findall(pattern, res.text)
-        token = None
-        if matches:
-            token = matches[0]
-        return token
+        for attempt in range(2):
+            res = self.session.get(
+                f"{self.base_url}/Job/computer-science-jobs.htm",
+                timeout=20,
+            )
+            if res.status_code == 403 or "challenge-platform" in res.text.lower():
+                # Cloudflare/security wall — retry once, then give up cleanly
+                log.warning(
+                    "Glassdoor returned a security wall (HTTP 403 / challenge). "
+                    "This is a bot-detection block on your IP. Pass working proxies "
+                    "(e.g. a residential proxy) to scrape_jobs to bypass it."
+                )
+                if attempt == 0:
+                    continue
+                return None
+            pattern = r'"token":\s*"([^"]+)"'
+            matches = re.findall(pattern, res.text)
+            token = None
+            if matches:
+                token = matches[0]
+            return token
+        return None
 
     def _process_job(self, job_data):
         """

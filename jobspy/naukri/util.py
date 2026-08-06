@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bs4 import BeautifulSoup
 from jobspy.model import JobType, Location
+from jobspy.remote import contains as remote_contains
 from jobspy.util import get_enum_from_job_type
 
 
@@ -30,9 +31,8 @@ def parse_company_industry(soup: BeautifulSoup | str) -> str | None:
 
 def is_job_remote(title: str, description: str, location: Location) -> bool:
     """
-    Searches the title, description, and location to check if the job is remote
+    Searches the title, description, and location to check if the job is remote.
+    Uses the shared master remote detector for better coverage.
     """
-    remote_keywords = ["remote", "work from home", "wfh"]
-    location_str = location.display_location()
-    full_string = f"{title} {description} {location_str}".lower()
-    return any(keyword in full_string for keyword in remote_keywords)
+    location_str = location.display_location() if location else ""
+    return remote_contains(title, description, location_str)

@@ -1,4 +1,5 @@
 from jobspy.model import CompensationInterval, JobType, Compensation
+from jobspy.remote import contains as remote_contains
 from jobspy.util import get_enum_from_job_type
 
 
@@ -52,20 +53,17 @@ def get_compensation(compensation: dict) -> Compensation | None:
 def is_job_remote(job: dict, description: str) -> bool:
     """
     Searches the description, location, and attributes to check if job is remote
+    Uses the shared master remote detector for better coverage.
     """
     remote_keywords = ["remote", "work from home", "wfh"]
     is_remote_in_attributes = any(
         any(keyword in attr["label"].lower() for keyword in remote_keywords)
         for attr in job["attributes"]
     )
-    is_remote_in_description = any(
-        keyword in description.lower() for keyword in remote_keywords
-    )
-    is_remote_in_location = any(
-        keyword in job["location"]["formatted"]["long"].lower()
-        for keyword in remote_keywords
-    )
-    return is_remote_in_attributes or is_remote_in_description or is_remote_in_location
+    location_str = job["location"]["formatted"]["long"] if job.get("location") else ""
+    title_str = job.get("title", "")
+    is_remote_in_text = remote_contains(title_str, description, location_str)
+    return is_remote_in_attributes or is_remote_in_text
 
 
 def get_compensation_interval(interval: str) -> CompensationInterval:

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from jobspy.model import Location, Country
+from jobspy.remote import contains as remote_contains
 
 
 def parse_location(location_text: str, country: str = "bangladesh") -> Location:
@@ -81,20 +82,12 @@ def find_job_listings(soup: BeautifulSoup) -> List[Any]:
 
 def is_job_remote(title: str, description: str = None, location: Location = None) -> bool:
     """
-    Determines if a job is remote based on title, description, and location
+    Determines if a job is remote based on title, description, and location.
+    Uses the shared master remote detector for better coverage.
     :param title: Job title
     :param description: Job description
     :param location: Job location
     :return: True if job is remote, False otherwise
     """
-    remote_keywords = ["remote", "work from home", "wfh", "home based"]
-    
-    # Combine all text fields
-    full_text = title.lower()
-    if description:
-        full_text += " " + description.lower()
-    if location:
-        full_text += " " + location.display_location().lower()
-    
-    # Check for remote keywords
-    return any(keyword in full_text for keyword in remote_keywords)
+    location_str = location.display_location() if location else ""
+    return remote_contains(title, description or "", location_str)

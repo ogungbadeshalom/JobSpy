@@ -17,6 +17,7 @@ from jobspy.model import (
     JobType,
 )
 from jobspy.util import extract_emails_from_text, extract_job_type, create_session
+from jobspy.remote import contains as remote_contains
 from jobspy.google.util import log, find_job_info_initial_page, find_job_info
 
 
@@ -194,7 +195,7 @@ class Google(Scraper):
             ),
             job_url=job_url,
             date_posted=date_posted,
-            is_remote="remote" in description.lower() or "wfh" in description.lower(),
+            is_remote=remote_contains(title, description, ""),
             description=description,
             emails=extract_emails_from_text(description),
             job_type=extract_job_type(description),
