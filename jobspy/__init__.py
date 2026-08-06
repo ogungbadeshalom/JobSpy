@@ -11,6 +11,7 @@ from jobspy.greenhouse import Greenhouse
 from jobspy.indeed import Indeed
 from jobspy.linkedin import LinkedIn
 from jobspy.remoteok import RemoteOK
+from jobspy.smartrecruiters import SmartRecruiters
 from jobspy.ziprecruiter import ZipRecruiter
 from jobspy.model import JobType, Location, JobResponse, Country
 from jobspy.model import SalarySource, ScraperInput, Site
@@ -62,6 +63,7 @@ def scrape_jobs(
         Site.ZIP_RECRUITER: ZipRecruiter,
         Site.GLASSDOOR: Glassdoor,
         Site.GREENHOUSE: Greenhouse,
+        Site.SMART_RECRUITERS: SmartRecruiters,
         Site.BUILTIN: BuiltIn,
         Site.REMOTEOK: RemoteOK,
     }

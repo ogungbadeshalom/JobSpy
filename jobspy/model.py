@@ -290,6 +290,7 @@ class Site(Enum):
     ZIP_RECRUITER = "zip_recruiter"
     GLASSDOOR = "glassdoor"
     GREENHOUSE = "greenhouse"
+    SMART_RECRUITERS = "smart_recruiters"
     BUILTIN = "builtin"
     REMOTEOK = "remoteok"
 
