@@ -9,6 +9,7 @@ from jobspy.bayt import BaytScraper
 from jobspy.bdjobs import BDJobs
 from jobspy.glassdoor import Glassdoor
 from jobspy.google import Google
+from jobspy.greenhouse import Greenhouse
 from jobspy.indeed import Indeed
 from jobspy.linkedin import LinkedIn
 from jobspy.naukri import Naukri
@@ -64,6 +65,7 @@ def scrape_jobs(
         Site.BAYT: BaytScraper,
         Site.NAUKRI: Naukri,
         Site.BDJOBS: BDJobs,  # Add BDJobs to the scraper mapping
+        Site.GREENHOUSE: Greenhouse,
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None
