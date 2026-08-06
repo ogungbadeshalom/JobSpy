@@ -1,14 +1,20 @@
 """BuiltIn board scraper for JobSpy.
 
-BuildIn is a real job board at builtin.com (the "Built In" network:
+BuiltIn is a real job board at builtin.com (the "Built In" network:
 Chicago, Austin, Denver, Colorado, etc.). The /jobs search page is
 server-rendered HTML and parses cleanly with BeautifulSoup — no browser,
 no CAPTCHA on a normal IP (unlike LinkedIn/Glassdoor).
+
+Card DOM (verified Aug 2026):
+  .left-side-tile-item-2           -> company name
+  .left-side-tile-item-3 > h2      -> job title
+  a[href^="/job/"]                 -> job URL
+  span <Remote|Hybrid|On-site>     -> remote status
+  span "City, Region, Code"        -> location
 """
 
 from __future__ import annotations
 
-import re
 from urllib.parse import urlencode, urljoin
 
 from bs4 import BeautifulSoup
@@ -26,6 +32,8 @@ from jobspy.remote import contains as remote_contains
 from jobspy.util import create_session, create_logger, extract_emails_from_text
 
 log = create_logger("BuiltIn")
+
+_REMOTE_LABELS = ("remote", "hybrid", "on-site", "onsite", "remote or hybrid")
 
 
 class BuiltIn(Scraper):
@@ -100,69 +108,54 @@ class BuiltIn(Scraper):
             card = a.find_parent("div", class_="row") or a.parent
             if not card:
                 continue
-            text = " ".join(card.get_text(" ", strip=True).split())
-            job = self._parse_card(text, abs_url)
+            job = self._parse_card(card, abs_url)
             if job:
                 jobs.append(job)
 
         return jobs, has_next
 
     @staticmethod
-    def _parse_card(text: str, url: str) -> JobPost | None:
-        """Parse a BuiltIn card whose flattened text looks like:
-        'CompanyName JobTitle Reposted 3 Days Ago Saved Hybrid Berlin, DEU Mid level'
-        We extract: company (first token), title (rest up to a recency marker),
-        remote flag (Hybrid/Remote/On-site), location, and emails.
-        """
-        if len(text) < 5 or not any(k in text for k in ("Posted", "Reposted", "By")):
-            # some cards have a job title with no company prefix; keep loose
-            pass
+    def _parse_card(card, url: str) -> JobPost | None:
+        def inner(sel):
+            el = card.select_one(sel)
+            return " ".join(el.get_text(" ", strip=True).split()) if el else ""
 
-        remote = remote_contains("", text, "")
-        remote_label = ""
-        for kw in ("Remote", "Hybrid", "On-Site", "Onsite"):
-            if kw.lower() in text.lower():
-                remote_label = kw
-                break
-
-        # Company is the first token; title follows. Recency marker splits title from meta.
-        tokens = text.split()
-        company = tokens[0] if tokens else None
-
-        # title = text after company, up to recency phrase (e.g. 'Reposted', 'Posted', 'ago')
-        title = ""
-        m = re.match(r"^\S+\s+(.+?)(?:\s+(?:Reposted|Posted|\d+ (?:Day|Hour|Week)s? ago).*)$", text, re.IGNORECASE)
-        if m:
-            title = m.group(1)
-        elif len(tokens) > 1:
-            # Take tokens[1:5] as best guess until we hit a meta word
-            meta_words = {"reposted", "posted", "ago", "saved", "mid", "junior", "senior", "lead"}
-            title = " ".join(t for t in tokens[1:] if t.lower() not in meta_words and not t.isdigit())[:200]
-            # heuristic cutoff: stop at a location word like 'in\n' - keep simple
+        company = inner(".left-side-tile-item-2")
+        title = inner(".left-side-tile-item-3 > h2") or inner(".left-side-tile-item-3")
         if not title:
             return None
 
-        # Location: last chunk that looks like a place (CITY, REGION CODE)
-        loc_match = re.search(r"\b([A-Za-z][A-Za-z .-]+?,?\s?[A-Za-z]{2,3})\s*$", text)
+        # collect any text that carries a remote/hybrid/onsite label
+        labels = []
+        for s in card.find_all("span"):
+            t = " ".join(s.get_text(" ", strip=True).split())
+            if t and any(k in t.lower() for k in _REMOTE_LABELS):
+                labels.append(t)
+        remote_text = " ".join(labels)
+        is_remote = remote_contains(title, remote_text, "")
+
+        # location: the span that looks like a place ("City, ST" / "4 Locations")
         location = Location(country="US")
-        if loc_match:
-            loc_str = loc_match.group(1).strip()
-            parts = [p.strip() for p in loc_str.split(",") if p.strip()]
-            if parts:
-                location.city = parts[0]
-                if len(parts) > 1:
-                    location.state = parts[1]
-        if remote_label in ("Remote",):
+        for s in card.find_all("span"):
+            t = " ".join(s.get_text(" ", strip=True).split())
+            if "," in t and not any(k in t.lower() for k in _REMOTE_LABELS):
+                parts = [p.strip() for p in t.split(",") if p.strip()]
+                if parts:
+                    location.city = parts[0]
+                    if len(parts) > 1:
+                        location.state = parts[1]
+                break
+        if is_remote and not location.city:
             location.city = "Remote"
             location.state = ""
 
         return JobPost(
             title=title,
-            company_name=company,
+            company_name=company or None,
             location=location,
             job_url=url,
-            is_remote=remote_contains(title, text, ""),
-            description=text,
+            is_remote=is_remote,
+            description=remote_text or f"{title} - {company}",
             listing_type="BuiltIn",
-            emails=extract_emails_from_text(text),
+            emails=extract_emails_from_text(f"{title} {company}"),
         )
