@@ -25,7 +25,7 @@ import csv
 from jobspy import scrape_jobs
 
 jobs = scrape_jobs(
-    site_name=["indeed", "linkedin", "zip_recruiter", "google", "greenhouse"], # "glassdoor", "bayt", "naukri", "bdjobs"
+    site_name=["indeed", "linkedin", "zip_recruiter", "google"], # "glassdoor", "bayt", "naukri", "bdjobs"
     search_term="software engineer",
     google_search_term="software engineer jobs near San Francisco, CA since yesterday",
     location="San Francisco, CA",
@@ -179,32 +179,6 @@ Bayt only uses the search_term parameter currently and searches internationally
 * Indeed is the best scraper currently with no rate limiting.  
 * All the job board endpoints are capped at around 1000 jobs on a given search.  
 * LinkedIn is the most restrictive and usually rate limits around the 10th page with one ip. Proxies are a must basically.
-
-### Greenhouse (new)
-Greenhouse is the ATS used by many companies (Vercel, Stripe, Notion, Figma, Zapier…). It's a clean JSON API with no browser/CAPTCHA requirements.
-
-```py
-from jobspy import scrape_jobs
-
-jobs = scrape_jobs(
-    site_name="greenhouse",
-    search_term="software engineer",
-    # Optional: pass a specific company board slug in `location` to scan only
-    # that company (e.g. "vercel", "stripe", "airtable"). Omit to scan the
-    # default set of remote-friendly boards.
-    location="vercel",
-    results_wanted=10,
-)
-```
-
-You can also combine it with other boards:
-```py
-jobs = scrape_jobs(
-    site_name=["greenhouse", "indeed"],
-    search_term="software engineer",
-    results_wanted=20,
-)
-```
 
 ## Frequently Asked Questions
 
