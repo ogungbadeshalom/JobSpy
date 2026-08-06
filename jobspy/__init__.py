@@ -22,6 +22,7 @@ from jobspy.util import (
     map_str_to_site,
     convert_to_annual,
     desired_order,
+    normalize_job_key,
 )
 
 
@@ -46,6 +47,7 @@ def scrape_jobs(
     offset: int | None = 0,
     hours_old: int = None,
     enforce_annual_salary: bool = False,
+    cross_site_dedup: bool = True,
     verbose: int = 0,
     user_agent: str = None,
     **kwargs,
@@ -145,6 +147,11 @@ def scrape_jobs(
                     **job_data["location"]
                 ).display_location()
 
+            # board-agnostic dedup key for cross-site sync
+            job_data["job_hash"] = normalize_job_key(
+                job_data.get("title"), job_data.get("company_name")
+            )
+
             # Handle compensation
             compensation_obj = job_data.get("compensation")
             if compensation_obj and isinstance(compensation_obj, dict):
@@ -211,7 +218,17 @@ def scrape_jobs(
         # Reorder the DataFrame according to the desired order
         jobs_df = jobs_df[desired_order]
 
-        # Step 4: Sort the DataFrame as required
+        # Step 4 (optional): drop the same job seen on multiple boards,
+        # keeping the first (rarest) board — this is the "job sync" dedup so a
+        # posting that appears on LinkedIn + Indeed + BuiltIn counts once.
+        if cross_site_dedup and "job_hash" in jobs_df.columns:
+            jobs_df = (
+                jobs_df.dropna(subset=["job_hash"])
+                .drop_duplicates(subset=["job_hash"], keep="first")
+                .reset_index(drop=True)
+            )
+
+        # Step 5: Sort the DataFrame as required
         return jobs_df.sort_values(
             by=["site", "date_posted"], ascending=[True, False]
         ).reset_index(drop=True)

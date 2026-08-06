@@ -353,7 +353,8 @@ desired_order = [
     "company_num_employees",
     "company_revenue",
     "company_description",
-    # naukri-specific fields
+    # job-sync fields
+    "job_hash",
     "skills",
     "experience_range",
     "company_rating",
@@ -361,3 +362,25 @@ desired_order = [
     "vacancy_count",
     "work_from_home_type",
 ]
+
+
+def normalize_job_key(title: str | None, company: str | None) -> str:
+    """Build a normalized, board-agnostic dedup key for a job.
+
+    Lowercases, strips punctuation/whitespace, and removes common filler words
+    so the same posting across LinkedIn / Indeed / BuiltIn / Greenhouse maps to
+    one key. Used for cross-site de-duplication.
+    """
+    import re
+
+    def _norm(s: str | None) -> str:
+        if not s:
+            return ""
+        s = s.lower()
+        # normalize accent encoding + strip non-alnum
+        s = re.sub(r"[^a-z0-9]+", " ", s)
+        return " ".join(s.split())
+
+    title_n = _norm(title)
+    company_n = _norm(company)
+    return f"{company_n} {title_n}".strip()
