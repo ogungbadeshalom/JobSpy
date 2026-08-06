@@ -28,6 +28,19 @@ log = create_logger("RemoteOK")
 API_URL = "https://remoteok.com/api"
 
 
+def _unicode_fix(text) -> str:
+    """Fix RemoteOK's double-encoded UTF-8 mojibake (e.g. 'KrakÃ³w' -> 'Kraków')."""
+    if not text:
+        return text
+    text = str(text)
+    if any(ord(c) >= 0x80 for c in text) and "Ã" in text:
+        try:
+            return text.encode("latin-1").decode("utf-8")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            return text
+    return text
+
+
 class RemoteOK(Scraper):
     def __init__(
         self,
@@ -51,9 +64,8 @@ class RemoteOK(Scraper):
             log.warning(f"RemoteOK request failed: {e}")
             return JobResponse(jobs=[])
 
-        raw = resp.text
-        # RemoteOK returns valid JSON but prepends repositories[] literals only
-        # for /api?name=... They use a JS-invalid prefix. Trim to the array.
+        raw = resp.content.decode("utf-8", errors="replace")
+        # Trim to the JSON array (RemoteOK returns a bare array).
         start = raw.find("[")
         end = raw.rfind("]")
         if start == -1 or end == -1 or end <= start:
@@ -104,7 +116,7 @@ class RemoteOK(Scraper):
 
     @staticmethod
     def _process_job(item: dict) -> JobPost | None:
-        position = item.get("position") or item.get("title")
+        position = _unicode_fix(item.get("position") or item.get("title"))
         if not position:
             return None
         # Reject junk / non-job entries RemoteOK sometimes returns (they have
@@ -112,16 +124,16 @@ class RemoteOK(Scraper):
         title_l = position.lower()
         if not item.get("company") or any(
             k in title_l
-            for k in ("no open roles", "why do you want", "open positions", "send us your cv", "we're always", "if you think you've got")
+            for k in ("no open roles", "why do you want", "open positions", "send us your cv", "don't see an open", "we're always", "if you think you've got", "not seeing", "keep in touch")
         ):
             return None
-        company = item.get("company") or ""
+        company = _unicode_fix(item.get("company") or "")
         url = item.get("url") or item.get("apply_url") or item.get("slug") or ""
         url = str(url)
         if url.startswith("/"):
             url = "https://remoteok.com" + url
 
-        loc_raw = str(item.get("location") or "Remote")
+        loc_raw = _unicode_fix(item.get("location") or "Remote")
         parts = [p.strip() for p in loc_raw.split(",") if p.strip()]
         location = Location(city=parts[0] if parts else "Remote", country="Remote")
         if len(parts) > 1:
