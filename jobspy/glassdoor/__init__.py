@@ -61,7 +61,7 @@ class Glassdoor(Scraper):
         self.base_url = self.scraper_input.country.get_glassdoor_url()
 
         self.session = create_session(
-            proxies=self.proxies, ca_cert=self.ca_cert, has_retry=True
+            proxies=self.proxies, ca_cert=self.ca_cert, has_retry=True, is_tls=False
         )
         token = self._get_csrf_token()
         headers["gd-csrf-token"] = token if token else fallback_token
@@ -113,7 +113,7 @@ class Glassdoor(Scraper):
             payload = self._add_payload(location_id, location_type, page_num, cursor)
             response = self.session.post(
                 f"{self.base_url}/graph",
-                timeout_seconds=15,
+                timeout=15,
                 data=payload,
             )
             if response.status_code != 200:
