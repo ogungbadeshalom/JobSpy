@@ -84,11 +84,14 @@ class RemoteOK(Scraper):
 
     @staticmethod
     def _build_url(si: ScraperInput) -> str:
-        params = {}
-        if si.search_term:
-            params["tags"] = si.search_term
-        qs = urlencode(params)
-        return f"{API_URL}?{qs}" if qs else API_URL
+        # RemoteOK's API `tags` param only accepts a SINGLE recognized tag
+        # (e.g. "python", "backend", "devops"). A multi-word search term like
+        # "software engineer" isn't a valid tag and would return 0 results.
+        # So: only use tags when the search term looks like a single token;
+        # otherwise fetch unfiltered and let _matches_term filter client-side.
+        if si.search_term and " " not in si.search_term.strip():
+            return f"{API_URL}?{urlencode({'tags': si.search_term.strip()})}"
+        return API_URL
 
     @staticmethod
     def _parse_date(value) -> date | None:
@@ -103,6 +106,14 @@ class RemoteOK(Scraper):
     def _process_job(item: dict) -> JobPost | None:
         position = item.get("position") or item.get("title")
         if not position:
+            return None
+        # Reject junk / non-job entries RemoteOK sometimes returns (they have
+        # no meaningful company + a boilerplate title). These aren't real jobs.
+        title_l = position.lower()
+        if not item.get("company") or any(
+            k in title_l
+            for k in ("no open roles", "why do you want", "open positions", "send us your cv", "we're always", "if you think you've got")
+        ):
             return None
         company = item.get("company") or ""
         url = item.get("url") or item.get("apply_url") or item.get("slug") or ""
