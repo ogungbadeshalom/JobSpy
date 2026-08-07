@@ -122,9 +122,23 @@ class Indeed(Scraper):
                 f"responded with status code: {response.status_code} (submit GitHub issue if this appears to be a bug)"
             )
             return jobs, new_cursor
-        data = response.json()
-        jobs = data["data"]["jobSearch"]["results"]
-        new_cursor = data["data"]["jobSearch"]["pageInfo"]["nextCursor"]
+        try:
+            data = response.json()
+        except Exception as e:
+            log.info(f"Indeed: could not parse JSON response: {e}")
+            return jobs, new_cursor
+        # Indeed sometimes returns a 200 with an anti-bot / empty body that has
+        # no jobSearch key — treat that as "no results" instead of crashing.
+        search = (data or {}).get("data", {}).get("jobSearch") if isinstance(data, dict) else None
+        if not search:
+            log.info("Indeed: response missing jobSearch (likely anti-bot / empty)")
+            return jobs, new_cursor
+        jobs = search["results"]
+        new_cursor = None
+        try:
+            new_cursor = search.get("pageInfo", {}).get("nextCursor")
+        except Exception:
+            new_cursor = None
 
         job_list = []
         for job in jobs:
