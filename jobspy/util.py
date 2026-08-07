@@ -128,6 +128,10 @@ def create_session(
 
     if ca_cert:
         session.verify = ca_cert
+    elif ca_cert is False:
+        # Explicitly disable SSL verification (used when routing through a local
+        # MITM rotating proxy like mubeng whose cert isn't in the system store).
+        session.verify = False
 
     return session
 
