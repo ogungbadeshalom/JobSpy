@@ -11,7 +11,9 @@ from jobspy.greenhouse import Greenhouse
 from jobspy.indeed import Indeed
 from jobspy.linkedin import LinkedIn
 from jobspy.remoteok import RemoteOK
+from jobspy.remotive import Remotive
 from jobspy.smartrecruiters import SmartRecruiters
+from jobspy.workingnomads import WorkingNomads
 from jobspy.weworkremotely import WeWorkRemotely
 from jobspy.ziprecruiter import ZipRecruiter
 from jobspy.model import JobType, Location, JobResponse, Country
@@ -68,6 +70,8 @@ def scrape_jobs(
         Site.BUILTIN: BuiltIn,
         Site.REMOTEOK: RemoteOK,
         Site.WEWORKREMOTELY: WeWorkRemotely,
+        Site.REMOTIVE: Remotive,
+        Site.WORKINGNOMADS: WorkingNomads,
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None

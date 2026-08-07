@@ -294,6 +294,8 @@ class Site(Enum):
     BUILTIN = "builtin"
     REMOTEOK = "remoteok"
     WEWORKREMOTELY = "weworkremotely"
+    REMOTIVE = "remotive"
+    WORKINGNOMADS = "workingnomads"
 
 
 class SalarySource(Enum):
