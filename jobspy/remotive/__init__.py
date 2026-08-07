@@ -60,15 +60,19 @@ class Remotive(Scraper):
         return JobResponse(jobs=jobs[: scraper_input.results_wanted])
 
     def _build_url(self, si: ScraperInput) -> str:
-        # Map the caller's search to a Remotive tag page when it's a well-known
-        # tag/category (e.g. ".net" -> remote-net-jobs). Otherwise fall back to
-        # the full remote directory and let the include-filter narrow.
+        # Remotive tag/category pages are limited to a fixed set (net,
+        # software-development, frontend-end, backend, etc.). For any search term
+        # we fall back to the full remote directory and let _matches_term /
+        # the app's include filter narrow to the caller's keyword. This keeps
+        # arbitrary terms ("developer", "software engineer") productive instead
+        # of 404ing on a non-existent category slug.
         term = (si.search_term or "").strip().lower()
         tag = re.sub(r"[^a-z0-9]+", "-", term).strip("-")  # ".net" -> "net"
         tag = tag.replace("--", "-")
+        # Known category slugs that actually host listings.
         if tag in {"net", "net-jobs"}:
             return f"{BASE_URL}/remote-net-jobs"
-        if tag and tag not in {"", "remote", "jobs"}:
+        if tag in {"software-development", "devops", "backend"}:
             return f"{BASE_URL}/remote-{tag}-jobs"
         return f"{BASE_URL}/remote-jobs"
 
