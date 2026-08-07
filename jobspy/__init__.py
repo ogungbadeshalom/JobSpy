@@ -12,6 +12,7 @@ from jobspy.indeed import Indeed
 from jobspy.linkedin import LinkedIn
 from jobspy.remoteok import RemoteOK
 from jobspy.smartrecruiters import SmartRecruiters
+from jobspy.weworkremotely import WeWorkRemotely
 from jobspy.ziprecruiter import ZipRecruiter
 from jobspy.model import JobType, Location, JobResponse, Country
 from jobspy.model import SalarySource, ScraperInput, Site
@@ -66,6 +67,7 @@ def scrape_jobs(
         Site.SMART_RECRUITERS: SmartRecruiters,
         Site.BUILTIN: BuiltIn,
         Site.REMOTEOK: RemoteOK,
+        Site.WEWORKREMOTELY: WeWorkRemotely,
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None

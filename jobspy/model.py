@@ -293,6 +293,7 @@ class Site(Enum):
     SMART_RECRUITERS = "smart_recruiters"
     BUILTIN = "builtin"
     REMOTEOK = "remoteok"
+    WEWORKREMOTELY = "weworkremotely"
 
 
 class SalarySource(Enum):
